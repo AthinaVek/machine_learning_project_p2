@@ -3,6 +3,12 @@ import struct
 from array import array
 from os.path  import join
 import random
+import tensorflow as tf
+import pandas as pd
+import os
+import keras
+from keras.models import load_model
+from keras import layers, optimizers, losses, metrics
 
 
 class MnistDataloader(object):
@@ -41,6 +47,31 @@ class MnistDataloader(object):
         return (x_train, y_train), (x_test, y_test)
 
 
+def encoder(input_img):
+	#encoder
+	#input = 28 x 28 x 1 (wide and thin)
+	conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(input_img) #28 x 28 x 32
+	conv1 = BatchNormalization()(conv1)
+	conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(conv1)
+	conv1 = BatchNormalization()(conv1)
+	pool1 = MaxPooling2D(pool_size=(2, 2))(conv1) #14 x 14 x 32
+	conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(pool1) #14 x 14 x 64
+	conv2 = BatchNormalization()(conv2)
+	conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(conv2)
+	conv2 = BatchNormalization()(conv2)
+	pool2 = MaxPooling2D(pool_size=(2, 2))(conv2) #7 x 7 x 64
+	conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool2) #7 x 7 x 128 (small & thick)
+	conv3 = BatchNormalization()(conv3)
+	conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(conv3)
+	conv3 = BatchNormalization()(conv3)
+	conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(conv3) #7 x 7 x 256 (small & thick)
+	conv4 = BatchNormalization()(conv4)
+	conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(conv4)
+	conv4 = BatchNormalization()(conv4)
+	print (conv4)
+	return conv4
+
+
 if __name__ == "__main__":
 	training_images_filepath = 'train-images-idx3-ubyte'
 	training_labels_filepath = 'train-labels-idx1-ubyte'
@@ -50,8 +81,10 @@ if __name__ == "__main__":
 	mnist_dataloader = MnistDataloader(training_images_filepath, training_labels_filepath, test_images_filepath, test_labels_filepath)
 	(x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data()
 
-	print(x_train[0])
-	print(y_train[0])
+	encoder(x_train[0])
+
+	# print(x_train[0])
+	# print(y_train[0])
 
 
 
