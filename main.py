@@ -9,6 +9,7 @@ import os
 import keras
 from keras.models import load_model
 from keras import layers, optimizers, losses, metrics
+from sklearn.model_selection import train_test_split
 
 
 class MnistDataloader(object):
@@ -51,7 +52,7 @@ def encoder(input_img):
 	#encoder
 	#input = 28 x 28 x 1 (wide and thin)
 
-	input_img = keras.Input(shape=(28,28,1))
+	# input_img = keras.Input(shape=(28,28,1))
 	conv1 = tf.keras.layers.Conv2D(32, (3, 3), activation='relu', padding='same')(input_img) #28 x 28 x 32
 	conv1 = tf.keras.layers.BatchNormalization()(conv1)
 	conv1 = tf.keras.layers.Conv2D(32, (3, 3), activation='relu', padding='same')(conv1)
@@ -70,8 +71,26 @@ def encoder(input_img):
 	conv4 = tf.keras.layers.BatchNormalization()(conv4)
 	conv4 = tf.keras.layers.Conv2D(256, (3, 3), activation='relu', padding='same')(conv4)
 	conv4 = tf.keras.layers.BatchNormalization()(conv4)
-	print (conv4)
 	return conv4
+
+def decoder(conv4):
+	#decoder
+	conv5 = tf.keras.layers.Conv2D(256, (3, 3), activation='relu', padding='same')(conv4)
+	conv5 = tf.keras.layers.BatchNormalization()(conv5)
+	conv5 = tf.keras.layers.Conv2D(128, (3, 3), activation='relu', padding='same')(conv5)
+	conv5 = tf.keras.layers.BatchNormalization()(conv5)
+	conv6 = tf.keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same')(conv5) #7 x 7 x 64
+	conv6 = tf.keras.layers.BatchNormalization()(conv6)
+	conv6 = tf.keras.layers.Conv2D(64, (3, 3), activation='relu', padding='same')(conv6)
+	conv6 = tf.keras.layers.BatchNormalization()(conv6)
+	up1 = tf.keras.layers.UpSampling2D((2,2))(conv6) #14 x 14 x 64
+	conv7 = tf.keras.layers.Conv2D(32, (3, 3), activation='relu', padding='same')(up1) # 14 x 14 x 32
+	conv7 = tf.keras.layers.BatchNormalization()(conv7)
+	conv7 = tf.keras.layers.Conv2D(32, (3, 3), activation='relu', padding='same')(conv7)
+	conv7 = tf.keras.layers.BatchNormalization()(conv7)
+	up2 = tf.keras.layers.UpSampling2D((2,2))(conv7) # 28 x 28 x 32
+	decoded = tf.keras.layers.Conv2D(1, (3, 3), activation='sigmoid', padding='same')(up2) # 28 x 28 x 1
+	return decoded
 
 
 if __name__ == "__main__":
@@ -83,16 +102,21 @@ if __name__ == "__main__":
 	mnist_dataloader = MnistDataloader(training_images_filepath, training_labels_filepath, test_images_filepath, test_labels_filepath)
 	(x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data()
 
-	encoder(x_train[0])
+	# for i in x_train:
+		# enc = encoder(i)
+		# dec = decoder(enc)
+
+	x_train[0] = keras.Input(shape=(28,28,1))
+	autoencoder= tf.keras.Model(x_train[0], decoder(encoder(x_train[0])))
+	autoencoder.compile(loss='mean_squared_error', optimizer= tf.keras.optimizers.RMSprop())
+
+	train_X,valid_X,train_ground,valid_ground = train_test_split(x_train,x_train,test_size=0.2,random_state=13)
+	train_X = np.reshape(train_X, (len(train_X), 28, 28, 1))
+	valid_X = np.reshape(valid_X, (len(valid_X), 28, 28, 1))
+	autoencoder_train = autoencoder.fit(train_X, train_ground, batch_size = 100, epochs = 3, verbose = 1, validation_data = (valid_X, valid_ground))
 
 	# print(x_train[0])
 	# print(y_train[0])
-
-
-
-
-
-
 
 
 
