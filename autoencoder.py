@@ -12,23 +12,14 @@ import random
 import tensorflow as tf
 import pandas as pd
 import os
+import sys
 
 
 class MnistDataloader(object):
-	def __init__(self, training_images_filepath,training_labels_filepath, test_images_filepath, test_labels_filepath):
+	def __init__(self, training_images_filepath):
 		self.training_images_filepath = training_images_filepath
-		self.training_labels_filepath = training_labels_filepath
-		self.test_images_filepath = test_images_filepath
-		self.test_labels_filepath = test_labels_filepath
 	
-	def read_images_labels(self, images_filepath, labels_filepath):        
-		labels = []
-		with open(labels_filepath, 'rb') as file:
-			magic, size = struct.unpack(">II", file.read(8))
-			if magic != 2049:
-				raise ValueError('Magic number mismatch, expected 2049, got {}'.format(magic))
-			labels = array("B", file.read())        
-		
+	def read_images(self, images_filepath):        
 		with open(images_filepath, 'rb') as file:
 			magic, size, rows, cols = struct.unpack(">IIII", file.read(16))
 			if magic != 2051:
@@ -42,31 +33,30 @@ class MnistDataloader(object):
 			# img = img.reshape(28, 28)
 			images[i][:] = img            
 		
-		return images, labels
+		return images
 			
 	def load_data(self):
-		x_train, y_train = self.read_images_labels(self.training_images_filepath, self.training_labels_filepath)
-		x_test, y_test = self.read_images_labels(self.test_images_filepath, self.test_labels_filepath)
-		return (x_train, y_train), (x_test, y_test)
+		x_train = self.read_images(self.training_images_filepath)
+		return (x_train)
 
 
 
 if __name__ == "__main__":
-	training_images_filepath = 'train-images-idx3-ubyte'
-	training_labels_filepath = 'train-labels-idx1-ubyte'
-	test_images_filepath = 't10k-images-idx3-ubyte'
-	test_labels_filepath = 't10k-labels-idx1-ubyte'
-
-	mnist_dataloader = MnistDataloader(training_images_filepath, training_labels_filepath, test_images_filepath, test_labels_filepath)
-	(xtrain, ytrain), (xtest, ytest) = mnist_dataloader.load_data()
-	xtrain, xtest, trainground, validground = train_test_split(xtrain,xtrain,test_size=0.2,random_state=13)
+	if (len(sys.argv) == 3):
+		training_images_filepath = sys.argv[2]
+	else:
+		training_images_filepath = 'train-images-idx3-ubyte'					# default train dataset
+	
+	mnist_dataloader = MnistDataloader(training_images_filepath)				# read images
+	(xtrain) = mnist_dataloader.load_data()
+	xtrain, xtest, trainground, validground = train_test_split(xtrain,xtrain,test_size=0.2,random_state=13)		# split dataset
 
 	x_train = np.array(xtrain)
 	x_test = np.array(xtest)
 	train_ground = np.array(trainground)
 	valid_ground = np.array(validground)
 
-	x_train = x_train.astype('float32') / 255.
+	x_train = x_train.astype('float32') / 255.									# values 0/1
 	x_test = x_test.astype('float32') / 255.
 	train_ground = train_ground.astype('float32') / 255.
 	valid_ground = valid_ground.astype('float32') / 255.
@@ -76,45 +66,57 @@ if __name__ == "__main__":
 	train_ground = np.reshape(train_ground, (len(train_ground), 28, 28, 1))
 	valid_ground = np.reshape(valid_ground, (len(valid_ground), 28, 28, 1))
 
+	layers = int(input("GIVE NUMBER OF LAYERS: \n"))
+	filters_size = int(input("GIVE FILTER SIZE: \n"))
+	filters_num = int(input("GIVE NUMBER OF FILTERS IN FIRST LAYER: \n"))
+	epochs_num = int(input("GIVE NUMBER OF EPOCHS: \n"))
+	batch_sz = int(input("GIVE BATCH SIZE: \n"))
+	
+	# layers = 5
+	# filters_size = 3
+	# filters_num = 8
+	# epochs_num = 10
+	# batch_sz = 100
+
+	count = 0
 	input = keras.layers.Input(shape=(28, 28, 1), name='input')
-	x = keras.layers.Conv2D(8, kernel_size=(3,3), padding = 'same', activation='relu', name='conv_1')(input)
-	x = keras.layers.BatchNormalization()(x)
-	x = keras.layers.MaxPooling2D(pool_size=(2,2), padding='same')(x)  #14x14x8
-	x = keras.layers.Dropout(0.7)(x)
-	x = keras.layers.Conv2D(16, kernel_size=(3,3), padding = 'same', activation='relu', name='conv_2')(x)
-	x = keras.layers.BatchNormalization()(x)
-	x = keras.layers.MaxPooling2D(pool_size=(2,2), padding='same')(x)  #7x7x16
-	x = keras.layers.Dropout(0.7)(x)
-	x = keras.layers.Conv2D(32, kernel_size=(3,3), padding = 'same', activation='relu', name='conv_3')(x)
-	x = keras.layers.BatchNormalization()(x)
-	x = keras.layers.MaxPooling2D(pool_size=(2,2), padding='same')(x)  #4x4x32
-	x = keras.layers.Dropout(0.7)(x)
-	x = keras.layers.Conv2D(64, kernel_size=(3,3), padding = 'same', activation='relu', name='conv_4')(x)
-	x = keras.layers.BatchNormalization()(x)
-	x = keras.layers.Conv2D(128, kernel_size=(3,3), padding = 'same', activation='relu', name='conv_5')(x)
-	x = keras.layers.BatchNormalization()(x)
+	x = input
 
-	x = keras.layers.Conv2D(128, kernel_size=(3,3), padding = 'same', activation='relu', name='conv_6')(x)
-	x = keras.layers.BatchNormalization()(x)
-	x = keras.layers.Conv2D(64, kernel_size=(3,3), padding = 'same', activation='relu', name='conv_7')(x)
-	x = keras.layers.BatchNormalization()(x)
-	x = keras.layers.Conv2D(32, kernel_size=(3,3), padding = 'same', activation='relu', name='conv_8')(x)
-	x = keras.layers.BatchNormalization()(x)
-	x = keras.layers.UpSampling2D(size=(2,2))(x) #8x8x32
-	x = keras.layers.Conv2D(16, kernel_size=(3,3), padding = 'same', activation='relu', name='conv_9')(x)
-	x = keras.layers.BatchNormalization()(x)
-	x = keras.layers.UpSampling2D(size=(2,2))(x) #16x16x16
-	x = keras.layers.Conv2D(8, kernel_size=(3,3), activation='relu', name='conv_10')(x)
-	x = keras.layers.BatchNormalization()(x)
-	x = keras.layers.UpSampling2D(size=(2,2))(x) #28x28x8
+	for l in range(layers):							# ENCODER
+		conv_name = 'conv_' + str(l+1)
 
-	output = keras.layers.Convolution2D(filters=1, kernel_size=(3,3), padding='same', activation='sigmoid', name='output')(x)
+		x = keras.layers.Conv2D(filters_num, kernel_size=(filters_size,filters_size), padding = 'same', activation='relu', name=conv_name)(x)
+		x = keras.layers.BatchNormalization()(x)
+		if (count < 3):
+			x = keras.layers.MaxPooling2D(pool_size=(2,2), padding='same')(x)
+			count = count+1
+		x = keras.layers.Dropout(0.5)(x)
+		filters_num = filters_num*2
+	filters_num = filters_num/2
 
-	model = Model(inputs=input, outputs=output, name='CAE')
+
+	for l in range(layers-1):							# DECODER
+		conv_name = 'conv_' + str(l+layers+1)
+
+		x = keras.layers.Conv2D(filters_num, kernel_size=(filters_size,filters_size), padding = 'same', activation='relu', name=conv_name)(x)
+		x = keras.layers.BatchNormalization()(x)
+		if (count-1 > 0):
+			x = keras.layers.UpSampling2D(size=(2,2))(x)
+			count = count-1
+
+		filters_num = filters_num/2
+	conv_name = 'conv_' + str(l+layers+2)
+	x = keras.layers.Conv2D(filters_num, kernel_size=(filters_size,filters_size), activation='relu', name=conv_name)(x)
+	x = keras.layers.BatchNormalization()(x)
+	x = keras.layers.UpSampling2D(size=(2,2))(x)
+	output = keras.layers.Conv2D(filters=1, kernel_size=(filters_size,filters_size), padding='same', activation='sigmoid', name='output')(x)
+
+
+	model = Model(inputs=input, outputs=output, name='AUTOENCODER')
 	model.compile(optimizer=keras.optimizers.RMSprop(), loss='mean_squared_error', metrics=['accuracy'])
 	model.summary()
 
-	history = model.fit(x_test, valid_ground, batch_size=100, epochs=20, shuffle=True, verbose=1, validation_data=(x_test, valid_ground))
+	history = model.fit(x_test, valid_ground, batch_size=batch_sz, epochs=epochs_num, shuffle=True, verbose=1, validation_data=(x_test, valid_ground))
 	out_images = model.predict(x_test)
 
 	n = 10  # How many digits we will display
