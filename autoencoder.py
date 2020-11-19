@@ -13,6 +13,8 @@ import tensorflow as tf
 import pandas as pd
 import os
 import sys
+from tensorflow.keras.models import load_model
+import h5py
 
 
 class MnistDataloader(object):
@@ -144,15 +146,19 @@ if __name__ == "__main__":
 			# plt.show()
 
 			plt.plot(history.history['loss'])
+			plt.plot(history.history['val_loss'])
 			plt.title('model loss')
 			plt.ylabel('loss')
 			plt.xlabel('epoch')
 			plt.legend(['train', 'test'], loc='upper left')
 			plt.show()
+
 			val = int(input("TO REPEAT THE EXPERIMENT PRESS 1.\nTO SAVE THE MODEL PRESS 3.\n"))
 			if(val == 1):
 				continue
 			elif(val == 3):
+				model.save('autoencoder_model', save_format='h5')
 				break
 		elif(val == 3):
+			model.save('autoencoder_model', save_format='h5')
 			break
