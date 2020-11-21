@@ -20,21 +20,19 @@ from tensorflow.keras.models import load_model
 
 
 class MnistDataloader(object):
-	def __init__(self, training_images_filepath,training_labels_filepath, test_images_filepath, test_labels_filepath):
-		self.training_images_filepath = training_images_filepath
-		self.training_labels_filepath = training_labels_filepath
-		self.test_images_filepath = test_images_filepath
-		self.test_labels_filepath = test_labels_filepath
+	def __init__(self, images_filepath,labels_filepath):
+		self.images_filepath = images_filepath
+		self.labels_filepath = labels_filepath
 	
-	def read_images_labels(self, images_filepath, labels_filepath):        
+	def read_images_labels(self):        
 		labels = []
-		with open(labels_filepath, 'rb') as file:
+		with open(self.labels_filepath, 'rb') as file:
 			magic, size = struct.unpack(">II", file.read(8))
 			if magic != 2049:
 				raise ValueError('Magic number mismatch, expected 2049, got {}'.format(magic))
 			labels = array("B", file.read())        
 		
-		with open(images_filepath, 'rb') as file:
+		with open(self.images_filepath, 'rb') as file:
 			magic, size, rows, cols = struct.unpack(">IIII", file.read(16))
 			if magic != 2051:
 				raise ValueError('Magic number mismatch, expected 2051, got {}'.format(magic))
@@ -44,26 +42,25 @@ class MnistDataloader(object):
 			images.append([0] * rows * cols)
 		for i in range(size):
 			img = np.array(image_data[i * rows * cols:(i + 1) * rows * cols])
-			# img = img.reshape(28, 28)
 			images[i][:] = img            
 		
 		return images, labels
-			
-	def load_data(self):
-		x_train, y_train = self.read_images_labels(self.training_images_filepath, self.training_labels_filepath)
-		x_test, y_test = self.read_images_labels(self.test_images_filepath, self.test_labels_filepath)
-		return (x_train, y_train), (x_test, y_test)
-
-
+	
 
 if __name__ == "__main__":
-	training_images_filepath = 'train-images-idx3-ubyte'
-	training_labels_filepath = 'train-labels-idx1-ubyte'
-	test_images_filepath = 't10k-images-idx3-ubyte'
-	test_labels_filepath = 't10k-labels-idx1-ubyte'
+	if (len(sys.argv) == 11):
+		training_images_filepath = sys.argv[2]
+	else:
+		training_images_filepath = 'train-images-idx3-ubyte'					# default values if not given by user
+		training_labels_filepath = 'train-labels-idx1-ubyte'
+		test_images_filepath = 't10k-images-idx3-ubyte'
+		test_labels_filepath = 't10k-labels-idx1-ubyte'
 
-	mnist_dataloader = MnistDataloader(training_images_filepath, training_labels_filepath, test_images_filepath, test_labels_filepath)
-	(xtrain, ytrain), (xtest, ytest) = mnist_dataloader.load_data()
+	mnist_dataloader = MnistDataloader(training_images_filepath, training_labels_filepath)
+	(xtrain, ytrain)= mnist_dataloader.read_images_labels()
+
+	mnist_dataloader = MnistDataloader(test_images_filepath, test_labels_filepath)
+	(xtest, ytest) = mnist_dataloader.read_images_labels()
 
 	x_train = np.array(xtrain)
 	x_test = np.array(xtest)
