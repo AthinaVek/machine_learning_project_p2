@@ -21,8 +21,8 @@ class MnistDataloader(object):
 	def __init__(self, training_images_filepath):
 		self.training_images_filepath = training_images_filepath
 	
-	def read_images(self, images_filepath):        
-		with open(images_filepath, 'rb') as file:
+	def read_images(self):        
+		with open(self.training_images_filepath, 'rb') as file:
 			magic, size, rows, cols = struct.unpack(">IIII", file.read(16))
 			if magic != 2051:
 				raise ValueError('Magic number mismatch, expected 2051, got {}'.format(magic))
@@ -36,10 +36,7 @@ class MnistDataloader(object):
 			images[i][:] = img            
 		
 		return images
-			
-	def load_data(self):
-		x_train = self.read_images(self.training_images_filepath)
-		return (x_train)
+	
 
 
 
@@ -50,7 +47,7 @@ if __name__ == "__main__":
 		training_images_filepath = 'train-images-idx3-ubyte'					# default train dataset
 	
 	mnist_dataloader = MnistDataloader(training_images_filepath)				# read images
-	(xtrain) = mnist_dataloader.load_data()
+	(xtrain) = mnist_dataloader.read_images()
 	xtrain, xtest, trainground, validground = train_test_split(xtrain,xtrain,test_size=0.2,random_state=13)		# split dataset
 
 	x_train = np.array(xtrain)
