@@ -49,8 +49,21 @@ class MnistDataloader(object):
 
 if __name__ == "__main__":
 	if (len(sys.argv) == 11):
-		training_images_filepath = sys.argv[2]
+		i = 0
+		for var in sys.argv:
+			if (var == "-d"):
+				training_images_filepath = sys.argv[i+1]
+			if (var == "-dl"):
+				training_labels_filepath = sys.argv[i+1]
+			if (var == "-t"):
+				test_images_filepath = sys.argv[i+1]
+			if (var == "-tl"):
+				test_labels_filepath = sys.argv[i+1]
+			if (var == "-model"):
+				model = sys.argv[i+1]
+			i = i+1
 	else:
+		print ("AAAAAAAAAAAAAAAAAAAA")
 		training_images_filepath = 'train-images-idx3-ubyte'					# default values if not given by user
 		training_labels_filepath = 'train-labels-idx1-ubyte'
 		test_images_filepath = 't10k-images-idx3-ubyte'
@@ -85,7 +98,6 @@ if __name__ == "__main__":
 	batch_sz = 100
 	num_classes = 10
 
-	
 	count = 0
 	networkInput = keras.layers.Input(shape=(28, 28, 1), name='input')
 	x = networkInput
@@ -108,7 +120,7 @@ if __name__ == "__main__":
 
 	encoder_model = Model(inputs=networkInput, outputs=output, name='ENCODER')
 
-	autoencoder_model = load_model('autoencoder_model')
+	autoencoder_model = load_model(model)
 	for l1,l2 in zip(encoder_model.layers[:19],autoencoder_model.layers[0:19]):
 		l1.set_weights(l2.get_weights())
 
