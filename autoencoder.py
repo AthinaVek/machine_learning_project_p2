@@ -17,25 +17,21 @@ from tensorflow.keras.models import load_model
 import h5py
 
 
-class MnistDataloader(object):
-	def __init__(self, training_images_filepath):
-		self.training_images_filepath = training_images_filepath
+def MnistDataloader(training_images_filepath):
+	with open(training_images_filepath, 'rb') as file:
+		magic, size, rows, cols = struct.unpack(">IIII", file.read(16))
+		if magic != 2051:
+			raise ValueError('Magic number mismatch, expected 2051, got {}'.format(magic))
+		image_data = array("B", file.read())        
+	images = []
+	for i in range(size):
+		images.append([0] * rows * cols)
+	for i in range(size):
+		img = np.array(image_data[i * rows * cols:(i + 1) * rows * cols])
+		# img = img.reshape(28, 28)
+		images[i][:] = img            
 	
-	def read_images(self):        
-		with open(self.training_images_filepath, 'rb') as file:
-			magic, size, rows, cols = struct.unpack(">IIII", file.read(16))
-			if magic != 2051:
-				raise ValueError('Magic number mismatch, expected 2051, got {}'.format(magic))
-			image_data = array("B", file.read())        
-		images = []
-		for i in range(size):
-			images.append([0] * rows * cols)
-		for i in range(size):
-			img = np.array(image_data[i * rows * cols:(i + 1) * rows * cols])
-			# img = img.reshape(28, 28)
-			images[i][:] = img            
-		
-		return images
+	return images
 	
 
 def encoder_decoder(x, layers, filters_size, filters_num):
@@ -104,10 +100,10 @@ if __name__ == "__main__":
 	if (len(sys.argv) == 3):
 		training_images_filepath = sys.argv[2]
 	else:
+		print ("Wrong input. Using default value.")
 		training_images_filepath = 'train-images-idx3-ubyte'					# default train dataset
 	
-	mnist_dataloader = MnistDataloader(training_images_filepath)				# read images
-	(xtrain) = mnist_dataloader.read_images()
+	(xtrain) = MnistDataloader(training_images_filepath)				# read images
 	xtrain, xtest, trainground, validground = train_test_split(xtrain,xtrain,test_size=0.2,random_state=13)		# split dataset
 
 	x_train = np.array(xtrain)
@@ -162,7 +158,7 @@ if __name__ == "__main__":
 			elif(val == 3):
 				model.save('autoencoder_model', save_format='h5')
 				break
-				
+
 		elif(val == 3):
 			model.save('autoencoder_model', save_format='h5')
 			break

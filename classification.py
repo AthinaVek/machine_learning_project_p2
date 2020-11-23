@@ -20,33 +20,28 @@ from tensorflow.keras.models import load_model
 import sys
 
 
-class MnistDataloader(object):
-	def __init__(self, images_filepath,labels_filepath):
-		self.images_filepath = images_filepath
-		self.labels_filepath = labels_filepath
+def MnistDataloader(images_filepath,labels_filepath):
+	labels = []
+	with open(labels_filepath, 'rb') as file:
+		magic, size = struct.unpack(">II", file.read(8))
+		if magic != 2049:
+			raise ValueError('Magic number mismatch, expected 2049, got {}'.format(magic))
+		labels = array("B", file.read())        
 	
-	def read_images_labels(self):        
-		labels = []
-		with open(self.labels_filepath, 'rb') as file:
-			magic, size = struct.unpack(">II", file.read(8))
-			if magic != 2049:
-				raise ValueError('Magic number mismatch, expected 2049, got {}'.format(magic))
-			labels = array("B", file.read())        
-		
-		with open(self.images_filepath, 'rb') as file:
-			magic, size, rows, cols = struct.unpack(">IIII", file.read(16))
-			if magic != 2051:
-				raise ValueError('Magic number mismatch, expected 2051, got {}'.format(magic))
-			image_data = array("B", file.read())        
-		images = []
-		for i in range(size):
-			images.append([0] * rows * cols)
-		for i in range(size):
-			img = np.array(image_data[i * rows * cols:(i + 1) * rows * cols])
-			images[i][:] = img            
-		
-		return images, labels
+	with open(images_filepath, 'rb') as file:
+		magic, size, rows, cols = struct.unpack(">IIII", file.read(16))
+		if magic != 2051:
+			raise ValueError('Magic number mismatch, expected 2051, got {}'.format(magic))
+		image_data = array("B", file.read())        
+	images = []
+	for i in range(size):
+		images.append([0] * rows * cols)
+	for i in range(size):
+		img = np.array(image_data[i * rows * cols:(i + 1) * rows * cols])
+		images[i][:] = img            
 	
+	return images, labels
+
 
 def encoder_flatten(x, layers, filters_size, filters_num):
 	count = 0
@@ -109,11 +104,8 @@ if __name__ == "__main__":
 		test_images_filepath = 't10k-images-idx3-ubyte'
 		test_labels_filepath = 't10k-labels-idx1-ubyte'
 
-	mnist_dataloader = MnistDataloader(training_images_filepath, training_labels_filepath)
-	(xtrain, ytrain)= mnist_dataloader.read_images_labels()
-
-	mnist_dataloader = MnistDataloader(test_images_filepath, test_labels_filepath)
-	(xtest, ytest) = mnist_dataloader.read_images_labels()
+	(xtrain, ytrain) = MnistDataloader(training_images_filepath, training_labels_filepath)
+	(xtest, ytest) = MnistDataloader(test_images_filepath, test_labels_filepath)
 
 	x_train = np.array(xtrain)
 	x_test = np.array(xtest)
@@ -164,6 +156,7 @@ if __name__ == "__main__":
 		encoder_model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(),metrics=['accuracy'])
 		encoder_model.summary()
 
+		print ("Stage 1:")
 		classify_train = encoder_model.fit(x_train, y_train_array, batch_size=batch_sz, epochs=epochs_num, verbose=1, validation_data=(xx_test, xy_test_array))
 		encoder_model.save_weights('autoencoder_classification.h5')
 
@@ -171,6 +164,7 @@ if __name__ == "__main__":
 			layer.trainable = True
 
 		encoder_model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(),metrics=['accuracy'])
+		print ("Stage 2:")
 		classify_train = encoder_model.fit(x_train, y_train_array, batch_size=batch_sz, epochs=epochs_num, verbose=1, validation_data=(xx_test, xy_test_array))
 		# encoder_model.save_weights('classification_complete.h5')
 
