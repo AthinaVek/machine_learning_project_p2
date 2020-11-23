@@ -17,6 +17,7 @@ from keras import regularizers
 from keras import backend as K
 from keras.utils import to_categorical
 from tensorflow.keras.models import load_model
+import sys
 
 
 class MnistDataloader(object):
@@ -63,7 +64,7 @@ if __name__ == "__main__":
 				model = sys.argv[i+1]
 			i = i+1
 	else:
-		print ("AAAAAAAAAAAAAAAAAAAA")
+		print ("Wrong input. Using default values.")
 		training_images_filepath = 'train-images-idx3-ubyte'					# default values if not given by user
 		training_labels_filepath = 'train-labels-idx1-ubyte'
 		test_images_filepath = 't10k-images-idx3-ubyte'
@@ -91,68 +92,121 @@ if __name__ == "__main__":
 
 	x_train,xx_test,y_train_array,xy_test_array = train_test_split(x_train,y_train_array,test_size=0.2,random_state=13)
 	
-	layers = 5
-	filters_size = 3
-	filters_num = 8
-	epochs_num = 5
-	batch_sz = 100
-	num_classes = 10
+	while (1):
+		layers = int(input("GIVE NUMBER OF LAYERS: \n"))
+		filters_size = int(input("GIVE FILTER SIZE: \n"))
+		filters_num = int(input("GIVE NUMBER OF FILTERS IN FIRST LAYER: \n"))
+		epochs_num = int(input("GIVE NUMBER OF EPOCHS: \n"))
+		batch_sz = int(input("GIVE BATCH SIZE: \n"))
 
-	count = 0
-	networkInput = keras.layers.Input(shape=(28, 28, 1), name='input')
-	x = networkInput
+		# layers = 5
+		# filters_size = 3
+		# filters_num = 8
+		# epochs_num = 5
+		# batch_sz = 100
+		num_classes = 10
 
-	for l in range(layers):							# ENCODER
-		conv_name = 'conv_' + str(l+1)
+		count = 0
+		networkInput = keras.layers.Input(shape=(28, 28, 1), name='input')
+		x = networkInput
 
-		x = keras.layers.Conv2D(filters_num, kernel_size=(filters_size,filters_size), padding = 'same', activation='relu', name=conv_name)(x)
-		x = keras.layers.BatchNormalization()(x)
-		if (count < 3):
-			x = keras.layers.MaxPooling2D(pool_size=(2,2), padding='same')(x)
-			count = count+1
-		x = keras.layers.Dropout(0.5)(x)
-		filters_num = filters_num*2
-	filters_num = filters_num/2
+		for l in range(layers):							# ENCODER
+			conv_name = 'conv_' + str(l+1)
 
-	flat = keras.layers.Flatten()(x)
-	den = keras.layers.Dense(filters_num, activation='relu')(flat)
-	output = keras.layers.Dense(num_classes, activation='softmax')(den)
+			x = keras.layers.Conv2D(filters_num, kernel_size=(filters_size,filters_size), padding = 'same', activation='relu', name=conv_name)(x)
+			x = keras.layers.BatchNormalization()(x)
+			if (count < 3):
+				x = keras.layers.MaxPooling2D(pool_size=(2,2), padding='same')(x)
+				count = count+1
+			x = keras.layers.Dropout(0.5)(x)
+			filters_num = filters_num*2
+		filters_num = filters_num/2
 
-	encoder_model = Model(inputs=networkInput, outputs=output, name='ENCODER')
+		flat = keras.layers.Flatten()(x)
+		den = keras.layers.Dense(filters_num, activation='relu')(flat)
+		output = keras.layers.Dense(num_classes, activation='softmax')(den)
 
-	autoencoder_model = load_model(model)
-	for l1,l2 in zip(encoder_model.layers[:19],autoencoder_model.layers[0:19]):
-		l1.set_weights(l2.get_weights())
+		encoder_model = Model(inputs=networkInput, outputs=output, name='ENCODER')
 
-	autoencoder_model.get_weights()[0][1]
-	encoder_model.get_weights()[0][1]
+		autoencoder_model = load_model(model)
+		for l1,l2 in zip(encoder_model.layers[:19],autoencoder_model.layers[0:19]):
+			l1.set_weights(l2.get_weights())
 
-	for layer in encoder_model.layers[0:19]:
-		layer.trainable = False
+		autoencoder_model.get_weights()[0][1]
+		encoder_model.get_weights()[0][1]
 
-	encoder_model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(),metrics=['accuracy'])
-	encoder_model.summary()
+		for layer in encoder_model.layers[0:19]:
+			layer.trainable = False
 
-	classify_train = encoder_model.fit(x_train, y_train_array, batch_size=batch_sz, epochs=epochs_num, verbose=1, validation_data=(xx_test, xy_test_array))
+		encoder_model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(),metrics=['accuracy'])
+		encoder_model.summary()
 
-	encoder_model.save_weights('autoencoder_classification.h5')
+		classify_train = encoder_model.fit(x_train, y_train_array, batch_size=batch_sz, epochs=epochs_num, verbose=1, validation_data=(xx_test, xy_test_array))
 
-	for layer in encoder_model.layers[0:19]:
-		layer.trainable = True
+		encoder_model.save_weights('autoencoder_classification.h5')
 
-	encoder_model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(),metrics=['accuracy'])
+		for layer in encoder_model.layers[0:19]:
+			layer.trainable = True
 
-	classify_train = encoder_model.fit(x_train, y_train_array, batch_size=batch_sz, epochs=epochs_num, verbose=1, validation_data=(xx_test, xy_test_array))
+		encoder_model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(),metrics=['accuracy'])
 
-	encoder_model.save_weights('classification_complete.h5')
+		classify_train = encoder_model.fit(x_train, y_train_array, batch_size=batch_sz, epochs=epochs_num, verbose=1, validation_data=(xx_test, xy_test_array))
 
-	predicted_classes = encoder_model.predict(x_test)
-	predicted_classes = np.argmax(np.round(predicted_classes),axis=1)
+		# encoder_model.save_weights('classification_complete.h5')
 
-	correct = np.where(predicted_classes==y_test)[0]
-	print (len(correct))
-	for i, correct in enumerate(correct[:9]):
-		plt.subplot(3,3,i+1)
-		plt.imshow(x_train[correct].reshape(28,28), cmap='gray', interpolation='none')
-		plt.title("Predicted {}, Class {}".format(predicted_classes[correct], y_test[correct]))
-		plt.tight_layout()
+		val = int(input("TO REPEAT THE EXPERIMENT PRESS 1.\nTO SHOW THE PLOTS PRESS 2.\nTO SAVE THE MODEL PRESS 3.\n"))
+		if(val == 1):
+			continue
+		elif(val == 2):
+			# plots
+
+
+			val = int(input("TO REPEAT THE EXPERIMENT PRESS 1.\nTO SAVE THE MODEL PRESS 3.\n"))
+			if(val == 1):
+				continue
+			elif(val == 3):
+				predicted_classes = encoder_model.predict(x_test)
+				predicted_classes = np.argmax(np.round(predicted_classes),axis=1)
+
+				correct = np.where(predicted_classes==y_test)[0]
+				print (len(correct))
+				for i, correct in enumerate(correct[:9]):
+					plt.subplot(3,3,i+1)
+					plt.imshow(x_train[correct].reshape(28,28), cmap='gray', interpolation='none')
+					plt.title("Predicted {}, Class {}".format(predicted_classes[correct], y_test[correct]))
+					plt.tight_layout()
+
+				incorrect = np.where(predicted_classes!=y_test)[0]
+				print (len(incorrect))
+				for i, incorrect in enumerate(incorrect[:9]):
+					plt.subplot(3,3,i+1)
+					plt.imshow(x_train[incorrect].reshape(28,28), cmap='gray', interpolation='none')
+					plt.title("Predicted {}, Class {}".format(predicted_classes[incorrect], y_test[incorrect]))
+					plt.tight_layout()
+				break
+		elif(val == 3):
+			predicted_classes = encoder_model.predict(x_test)
+			predicted_classes = np.argmax(np.round(predicted_classes),axis=1)
+
+			correct = np.where(predicted_classes==y_test)[0]
+			print (len(correct))
+			for i, correct in enumerate(correct[:9]):
+				ax1 = plt.subplot(3,3,i+1)
+				ax1.imshow(x_train[correct].reshape(28,28), cmap='gray', interpolation='none')
+				ax1.title("Predicted {}, Class {}".format(predicted_classes[correct], y_test[correct]))
+				ax1.tight_layout()
+
+			incorrect = np.where(predicted_classes!=y_test)[0]
+			print (len(incorrect))
+			# for i, incorrect in enumerate(incorrect[:9]):
+			# 	plt.subplot(3,3,i+1)
+			# 	plt.imshow(x_train[incorrect].reshape(28,28), cmap='gray', interpolation='none')
+			# 	plt.title("Predicted {}, Class {}".format(predicted_classes[incorrect], y_test[incorrect]))
+			# 	plt.tight_layout()
+			break
+
+
+
+
+
+	
