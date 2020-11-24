@@ -103,6 +103,7 @@ if __name__ == "__main__":
 		training_labels_filepath = 'train-labels-idx1-ubyte'
 		test_images_filepath = 't10k-images-idx3-ubyte'
 		test_labels_filepath = 't10k-labels-idx1-ubyte'
+		model = 'autoencoder_model'
 
 	(xtrain, ytrain) = MnistDataloader(training_images_filepath, training_labels_filepath)
 	(xtest, ytest) = MnistDataloader(test_images_filepath, test_labels_filepath)
