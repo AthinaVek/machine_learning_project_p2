@@ -136,66 +136,57 @@ if __name__ == "__main__":
 		batch_sz = 100
 		neurons_fc = 256
 
-		# networkInput = keras.layers.Input(shape=(28, 28, 1), name='input')
-		# x = networkInput
-
-		# output = encoder_flatten(x, layers, filters_size, filters_num)
-		# encoder_model = Model(inputs=networkInput, outputs=output, name='ENCODER')
+		networkInput = keras.layers.Input(shape=(28, 28, 1), name='input')
 
 		autoencoder_model = load_model(model)
 		l = (len(autoencoder_model.layers)/2) -1
 
-
-		
-		flat = keras.layers.Flatten()(autoencoder_model.layers[int(l)])
+		flat = keras.layers.Flatten()(autoencoder_model.layers[int(l)].output)   	# get autoencoder's output and do flatten
 		den = keras.layers.Dense(neurons_fc, activation='relu')(flat)
 		output = keras.layers.Dense(num_classes, activation='softmax')(den)
 
+		encoder_model = Model(inputs=autoencoder_model.layers[0].output, outputs=output, name='ENCODER')
 
+		print("\nStage 1:\n")
+		for layer in encoder_model.layers[0:int(l)+1]:
+			layer.trainable = False
 
+		encoder_model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(), metrics=['accuracy'])
+		encoder_model.summary()
 
-		# for l1, l2 in zip(encoder_model.layers[:l], autoencoder_model.layers[0:l]):
-		# 	l1.set_weights(l2.get_weights())
-
-		# for layer in encoder_model.layers[0:l]:
-		# 	layer.trainable = False
-
-		# encoder_model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(), metrics=['accuracy'])
-		# encoder_model.summary()
-
-		# print("Stage 1:")
-		# classify_train = encoder_model.fit(x_train, y_train_array, batch_size=batch_sz, epochs=epochs_num, verbose=1, validation_data=(xx_test, xy_test_array))
+		classify_train = encoder_model.fit(x_train, y_train_array, batch_size=batch_sz, epochs=epochs_num, verbose=1, validation_data=(xx_test, xy_test_array))
 		# encoder_model.save_weights('autoencoder_classification.h5')
 
-		# for layer in encoder_model.layers[0:l]:
-		# 	layer.trainable = True
+		print("\nStage 2:\n")
+		for layer in encoder_model.layers[0:int(l)+1]:
+			layer.trainable = True
 
-		# encoder_model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(), metrics=['accuracy'])
-		# print("Stage 2:")
-		# classify_train = encoder_model.fit(x_train, y_train_array, batch_size=batch_sz, epochs=epochs_num, verbose=1, validation_data=(xx_test, xy_test_array))
-		# # encoder_model.save_weights('classification_complete.h5')
+		encoder_model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(), metrics=['accuracy'])
+		
+		classify_train = encoder_model.fit(x_train, y_train_array, batch_size=batch_sz, epochs=epochs_num, verbose=1, validation_data=(xx_test, xy_test_array))
+		# encoder_model.save_weights('classification_complete.h5')
 
-		# val = int(input("TO REPEAT THE EXPERIMENT PRESS 1.\nTO SHOW THE PLOTS PRESS 2.\nTO SAVE THE MODEL PRESS 3.\n"))
-		# if (val == 1):
-		# 	continue
+		val = int(input("TO REPEAT THE EXPERIMENT PRESS 1.\nTO SHOW THE PLOTS PRESS 2.\nTO SAVE THE MODEL PRESS 3.\n"))
+		if (val == 1):
+			continue
 
-		# elif (val == 2):
-		# 	# plots
+		elif (val == 2):
+			# plots
 
-		# 	val = int(input("TO REPEAT THE EXPERIMENT PRESS 1.\nTO SAVE THE MODEL PRESS 3.\n"))
-		# 	if (val == 1):
-		# 		continue
-		# 	elif (val == 3):
-		# 		predicted_classes = encoder_model.predict(x_test)
-		# 		predicted_classes = np.argmax(np.round(predicted_classes), axis=1)
-		# 		print_correct_incorrect(predicted_classes, x_train, y_test)
-		# 		break
+			val = int(input("TO REPEAT THE EXPERIMENT PRESS 1.\nTO SAVE THE MODEL PRESS 3.\n"))
+			if (val == 1):
+				continue
+			elif (val == 3):
+				predicted_classes = encoder_model.predict(x_test)
+				predicted_classes = np.argmax(np.round(predicted_classes), axis=1)
+				print_correct_incorrect(predicted_classes, x_train, y_test)
+				break
 
-		# elif (val == 3):
-		# 	predicted_classes = encoder_model.predict(x_test)
-		# 	predicted_classes = np.argmax(np.round(predicted_classes), axis=1)
-		# 	print_correct_incorrect(predicted_classes, x_train, y_test)
-		# 	break
+		elif (val == 3):
+			predicted_classes = encoder_model.predict(x_test)
+			predicted_classes = np.argmax(np.round(predicted_classes), axis=1)
+			print_correct_incorrect(predicted_classes, x_train, y_test)
+			break
 
 
 
