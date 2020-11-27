@@ -28,7 +28,6 @@ def MnistDataloader(training_images_filepath):
         images.append([0] * rows * cols)
     for i in range(size):
         img = np.array(image_data[i * rows * cols:(i + 1) * rows * cols])
-        # img = img.reshape(28, 28)
         images[i][:] = img
 
     return images
@@ -98,49 +97,71 @@ def print_plots(history):
     plt.legend(['train', 'test'], loc='upper left')
     plt.show()
 
-def print_plot(id, list_loss, list_varloss, list_accuracy, list_val_accuracy, list_layers, list_filters_size,  list_filters_num, list_epochs_num, list_batch_sz ):
+
+def print_plot(id, list_loss, list_val_loss, list_accuracy, list_val_accuracy, list_layers, list_filters_size,  list_filters_num, list_epochs_num, list_batch_sz ):
     y1 = list_loss
-    y2 = list_varloss
+    y2 = list_val_loss
     y3 = list_accuracy
     y4 = list_val_accuracy
 
-    if id == 0:
-        x = list_layers
-    elif id == 1:
-        x = list_filters_size
-    elif id == 2:
-        x = list_filters_num
-    elif id == 3:
-        x = list_epochs_num
-    elif id == 4:
-        x = list_batch_sz
-
-    plt.figure(figsize=(20, 4))
-
+    plt.figure(figsize=(15, 4))
     plt.ylabel('loss')
 
     if id == 0:
+        x = list_layers
         plt.title('layers')
         plt.xlabel('layers')
     elif id == 1:
+        x = list_filters_size
         plt.title('filters_size')
         plt.xlabel('filters_size')
     elif id == 2:
+        x = list_filters_num
         plt.title('filters_num')
         plt.xlabel('filters_num')
     elif id == 3:
+        x = list_epochs_num
         plt.title('epochs_num')
         plt.xlabel('epochs_num')
     elif id == 4:
+        x = list_batch_sz
         plt.title('batch_sz')
         plt.xlabel('batch_sz')
 
     plt.plot(x, y1)
     plt.plot(x, y2)
+    plt.legend(['lost', 'val_loss'], loc='upper left')
+    plt.show()
+
+    plt.figure(figsize=(15, 4))
+    plt.ylabel('accuracy')
+
+    if id == 0:
+        x = list_layers
+        plt.title('layers')
+        plt.xlabel('layers')
+    elif id == 1:
+        x = list_filters_size
+        plt.title('filters_size')
+        plt.xlabel('filters_size')
+    elif id == 2:
+        x = list_filters_num
+        plt.title('filters_num')
+        plt.xlabel('filters_num')
+    elif id == 3:
+        x = list_epochs_num
+        plt.title('epochs_num')
+        plt.xlabel('epochs_num')
+    elif id == 4:
+        x = list_batch_sz
+        plt.title('batch_sz')
+        plt.xlabel('batch_sz')
+
     plt.plot(x, y3)
     plt.plot(x, y4)
-    plt.legend(['lost', 'valloss', 'accuracy', 'valaccuracy'], loc='upper left')
+    plt.legend(['accuracy', 'val_accuracy'], loc='upper left')
     plt.show()
+
 
 
 
@@ -172,7 +193,7 @@ if __name__ == "__main__":
     valid_ground = np.reshape(valid_ground, (len(valid_ground), 28, 28, 1))
 
     list_loss = []
-    list_varloss = []
+    list_val_loss = []
     list_accuracy = []
     list_val_accuracy = []
 
@@ -214,14 +235,14 @@ while (1):
         history = model.fit(x_train, train_ground, batch_size=batch_sz, epochs=epochs_num, shuffle=True, verbose=1, validation_data=(x_test, valid_ground))
 
         last_loss =  history.history['loss'][-1]
-        last_varloss = history.history['val_loss'][-1]
+        last_val_loss = history.history['val_loss'][-1]
         last_accuracy = history.history['accuracy'][-1]
-        last_varaccuracy = history.history['val_accuracy'][-1]
+        last_val_accuracy = history.history['val_accuracy'][-1]
 
         list_loss.append(last_loss)
-        list_varloss.append(last_varloss)
+        list_val_loss.append(last_val_loss)
         list_accuracy.append(last_accuracy)
-        list_val_accuracy.append(last_varaccuracy)
+        list_val_accuracy.append(last_val_accuracy)
 
 
         out_images = model.predict(x_test)
@@ -231,11 +252,8 @@ while (1):
             continue
 
         elif (val == 2):
-            print_plot(0, list_loss, list_varloss, list_accuracy, list_val_accuracy, list_layers, list_filters_size,  list_filters_num, list_epochs_num, list_batch_sz)
-            print_plot(1, list_loss, list_varloss, list_accuracy, list_val_accuracy, list_layers, list_filters_size,  list_filters_num, list_epochs_num, list_batch_sz)
-            print_plot(2, list_loss, list_varloss, list_accuracy, list_val_accuracy, list_layers, list_filters_size,  list_filters_num, list_epochs_num, list_batch_sz)
-            print_plot(3, list_loss, list_varloss, list_accuracy, list_val_accuracy, list_layers, list_filters_size,  list_filters_num, list_epochs_num, list_batch_sz)
-            print_plot(4, list_loss, list_varloss, list_accuracy, list_val_accuracy, list_layers, list_filters_size,  list_filters_num, list_epochs_num, list_batch_sz)
+            val = int(input("TO PRINT LAYERS PLOT PRESS 0.\nTO PRINT FILTERS_SIZE PLOT PRESS 1.\nTO PRINT FILTERS_NUM PLOT PRESS 2.\nTO PRINT EPOCHS PLOT PRESS 3.\nTO PRINT BATCH_SIZE PLOT PRESS 4.\n"))
+            print_plot(int(val), list_loss, list_val_loss, list_accuracy, list_val_accuracy, list_layers, list_filters_size,  list_filters_num, list_epochs_num, list_batch_sz)
 
             val = int(input("TO REPEAT THE EXPERIMENT PRESS 1.\nTO SAVE THE MODEL PRESS 3.\n"))
             if (val == 1):
