@@ -130,7 +130,7 @@ def print_plot(id, list_loss, list_val_loss, list_accuracy, list_val_accuracy, l
 
     plt.plot(x, y1)
     plt.plot(x, y2)
-    plt.legend(['lost', 'val_loss'], loc='upper left')
+    plt.legend(['loss', 'val_loss'], loc='upper left')
     plt.show()
 
     plt.figure(figsize=(15, 4))
@@ -161,9 +161,6 @@ def print_plot(id, list_loss, list_val_loss, list_accuracy, list_val_accuracy, l
     plt.plot(x, y4)
     plt.legend(['accuracy', 'val_accuracy'], loc='upper left')
     plt.show()
-
-
-
 
 
 if __name__ == "__main__":
@@ -222,7 +219,6 @@ while (1):
         list_epochs_num.append(epochs_num)
         list_batch_sz.append(batch_sz)
 
-
         networkInput = keras.layers.Input(shape=(28, 28, 1), name='input')
         x = networkInput
 
@@ -243,7 +239,6 @@ while (1):
         list_val_loss.append(last_val_loss)
         list_accuracy.append(last_accuracy)
         list_val_accuracy.append(last_val_accuracy)
-
 
         out_images = model.predict(x_test)
 

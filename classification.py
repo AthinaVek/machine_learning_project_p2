@@ -18,6 +18,7 @@ from keras import backend as K
 from keras.utils import to_categorical
 from tensorflow.keras.models import load_model
 import sys
+from sklearn.metrics import classification_report
 
 
 def MnistDataloader(images_filepath, labels_filepath):
@@ -43,28 +44,6 @@ def MnistDataloader(images_filepath, labels_filepath):
 	return images, labels
 
 
-# def encoder_flatten(x, layers, filters_size, filters_num):
-# 	count = 0
-# 	for l in range(layers):  # ENCODER
-# 		conv_name = 'conv_' + str(l + 1)
-
-# 		x = keras.layers.Conv2D(filters_num, kernel_size=(filters_size, filters_size), padding='same',
-# 								activation='relu', name=conv_name)(x)
-# 		x = keras.layers.BatchNormalization()(x)
-# 		if (count < 3):
-# 			x = keras.layers.MaxPooling2D(pool_size=(2, 2), padding='same')(x)
-# 			count = count + 1
-# 		x = keras.layers.Dropout(0.5)(x)
-# 		filters_num = filters_num * 2
-# 	filters_num = filters_num / 2
-
-# 	flat = keras.layers.Flatten()(x)
-# 	den = keras.layers.Dense(neurons_fc, activation='relu')(flat)
-# 	output = keras.layers.Dense(num_classes, activation='softmax')(den)
-
-# 	return output
-
-
 def print_correct_incorrect(predicted_classes, x_train, y_test):
 	correct = np.where(predicted_classes == y_test)[0]
 	print(len(correct))
@@ -81,6 +60,54 @@ def print_correct_incorrect(predicted_classes, x_train, y_test):
 		plt.imshow(x_train[incorrect].reshape(28, 28), cmap='gray', interpolation='none')
 		plt.title("Predicted {}, Class {}".format(predicted_classes[incorrect], y_test[incorrect]))
 		plt.tight_layout()
+
+
+def print_plot(id, list_loss, list_val_loss, list_accuracy, list_val_accuracy, list_epochs_num, list_batch_sz, list_neurons_fc):
+	y1 = list_loss
+	y2 = list_val_loss
+	y3 = list_accuracy
+	y4 = list_val_accuracy
+
+	plt.subplot(2, 1, 1)
+	# plt.figure(figsize=(5, 5))
+	plt.ylabel('loss')
+
+	if id == 0:
+		x = list_epochs_num
+		plt.title('epochs_num')
+		plt.xlabel('epochs_num')
+	elif id == 1:
+		x = list_batch_sz
+		plt.title('batch_sz')
+		plt.xlabel('batch_sz')
+	elif id == 2:
+		x = list_neurons_fc
+		plt.title('neurons_fc')
+		plt.xlabel('neurons_fc')
+
+	plt.plot(x, y1)
+	plt.plot(x, y2)
+	plt.legend(['loss', 'val_loss'], loc='upper left')
+	# plt.show()
+
+	plt.subplot(2, 1, 2)
+	# plt.figure(figsize=(5, 5))
+	plt.ylabel('accuracy')
+
+	if id == 0:
+		x = list_epochs_num
+		plt.xlabel('epochs_num')
+	elif id == 1:
+		x = list_batch_sz
+		plt.xlabel('batch_sz')
+	elif id == 2:
+		x = list_neurons_fc
+		plt.xlabel('neurons_fc')
+
+	plt.plot(x, y3)
+	plt.plot(x, y4)
+	plt.legend(['accuracy', 'val_accuracy'], loc='upper left')
+	plt.show()
 
 
 if __name__ == "__main__":
@@ -125,16 +152,29 @@ if __name__ == "__main__":
 
 	x_train, xx_test, y_train_array, xy_test_array = train_test_split(x_train, y_train_array, test_size=0.2, random_state=13)
 
+	list_loss = []
+	list_val_loss = []
+	list_accuracy = []
+	list_val_accuracy = []
+
+	list_epochs_num = []
+	list_batch_sz = []
+	list_neurons_fc = []
+
 	while (1):
 		num_classes = 10
 
-		# epochs_num = int(input("GIVE NUMBER OF EPOCHS: \n"))
-		# batch_sz = int(input("GIVE BATCH SIZE: \n"))
-		# neurons_fc = int(input("GIVE NEURONS AT FC LAYER: \n"))
+		epochs_num = int(input("GIVE NUMBER OF EPOCHS: \n"))
+		batch_sz = int(input("GIVE BATCH SIZE: \n"))
+		neurons_fc = int(input("GIVE NEURONS AT FC LAYER: \n"))
 
-		epochs_num = 5
-		batch_sz = 100
-		neurons_fc = 256
+		# epochs_num = 5
+		# batch_sz = 100
+		# neurons_fc = 256
+
+		list_epochs_num.append(epochs_num)
+		list_batch_sz.append(batch_sz)
+		list_neurons_fc.append(neurons_fc)
 
 		networkInput = keras.layers.Input(shape=(28, 28, 1), name='input')
 
@@ -155,7 +195,6 @@ if __name__ == "__main__":
 		encoder_model.summary()
 
 		classify_train = encoder_model.fit(x_train, y_train_array, batch_size=batch_sz, epochs=epochs_num, verbose=1, validation_data=(xx_test, xy_test_array))
-		# encoder_model.save_weights('autoencoder_classification.h5')
 
 		print("\nStage 2:\n")
 		for layer in encoder_model.layers[0:int(l)+1]:
@@ -164,28 +203,41 @@ if __name__ == "__main__":
 		encoder_model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(), metrics=['accuracy'])
 		
 		classify_train = encoder_model.fit(x_train, y_train_array, batch_size=batch_sz, epochs=epochs_num, verbose=1, validation_data=(xx_test, xy_test_array))
-		# encoder_model.save_weights('classification_complete.h5')
 
-		val = int(input("TO REPEAT THE EXPERIMENT PRESS 1.\nTO SHOW THE PLOTS PRESS 2.\nTO SAVE THE MODEL PRESS 3.\n"))
+		last_loss =  classify_train.history['loss'][-1]
+		last_val_loss = classify_train.history['val_loss'][-1]
+		last_accuracy = classify_train.history['accuracy'][-1]
+		last_val_accuracy = classify_train.history['val_accuracy'][-1]
+
+		list_loss.append(last_loss)
+		list_val_loss.append(last_val_loss)
+		list_accuracy.append(last_accuracy)
+		list_val_accuracy.append(last_val_accuracy)
+
+		val = int(input("TO REPEAT THE EXPERIMENT PRESS 1.\nTO SHOW THE PLOTS PRESS 2.\nTO CLASSIFY IMAGES PRESS 3.\n"))
 		if (val == 1):
 			continue
 
 		elif (val == 2):
-			# plots
+			val = int(input("TO PRINT EPOCHS PLOT PRESS 0.\nTO PRINT BATCH_SIZE PLOT PRESS 1.\nTO PRINT NEURONS_FC PLOT PRESS 2.\n"))
+			print_plot(int(val), list_loss, list_val_loss, list_accuracy, list_val_accuracy, list_epochs_num, list_batch_sz, list_neurons_fc)
 
-			val = int(input("TO REPEAT THE EXPERIMENT PRESS 1.\nTO SAVE THE MODEL PRESS 3.\n"))
+			predicted_classes = encoder_model.predict(x_test)
+			predicted_classes = np.argmax(np.round(predicted_classes), axis=1)
+
+			y_pred = encoder_model.predict(x_test, batch_size=batch_sz, verbose=1)
+			y_pred_bool = np.argmax(y_pred, axis=1)
+			print(classification_report(y_test, y_pred_bool))
+
+			val = int(input("TO REPEAT THE EXPERIMENT PRESS 1.\nTO CLASSIFY IMAGES PRESS 3.\n"))
 			if (val == 1):
 				continue
 			elif (val == 3):
-				predicted_classes = encoder_model.predict(x_test)
-				predicted_classes = np.argmax(np.round(predicted_classes), axis=1)
-				print_correct_incorrect(predicted_classes, x_train, y_test)
+				# print_correct_incorrect(predicted_classes, x_train, y_test)
 				break
 
 		elif (val == 3):
-			predicted_classes = encoder_model.predict(x_test)
-			predicted_classes = np.argmax(np.round(predicted_classes), axis=1)
-			print_correct_incorrect(predicted_classes, x_train, y_test)
+			# print_correct_incorrect(predicted_classes, x_train, y_test)
 			break
 
 
