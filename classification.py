@@ -44,24 +44,6 @@ def MnistDataloader(images_filepath, labels_filepath):
 	return images, labels
 
 
-def print_correct_incorrect(predicted_classes, x_train, y_test):
-	correct = np.where(predicted_classes == y_test)[0]
-	print(len(correct))
-	for i, correct in enumerate(correct[:9]):
-		ax = plt.subplot(3, 3, i + 1)
-		plt.imshow(x_train[correct].reshape(28, 28), cmap='gray', interpolation='none')
-		plt.title("Predicted {}, Class {}".format(predicted_classes[correct], y_test[correct]))
-		plt.tight_layout()
-
-	incorrect = np.where(predicted_classes != y_test)[0]
-	print(len(incorrect))
-	for i, incorrect in enumerate(incorrect[:9]):
-		ax = plt.subplot(3, 3, i + 1)
-		plt.imshow(x_train[incorrect].reshape(28, 28), cmap='gray', interpolation='none')
-		plt.title("Predicted {}, Class {}".format(predicted_classes[incorrect], y_test[incorrect]))
-		plt.tight_layout()
-
-
 def print_plot(id, list_loss, list_val_loss, list_accuracy, list_val_accuracy, list_epochs_num, list_batch_sz, list_neurons_fc):
 	y1 = list_loss
 	y2 = list_val_loss
@@ -107,6 +89,33 @@ def print_plot(id, list_loss, list_val_loss, list_accuracy, list_val_accuracy, l
 	plt.plot(x, y3)
 	plt.plot(x, y4)
 	plt.legend(['accuracy', 'val_accuracy'], loc='upper left')
+	plt.show()
+
+
+def print_correct_incorrect(predicted_classes, x_test, y_test):
+	correct = np.where(predicted_classes == y_test)[0]
+
+	i=1
+	plt.figure(figsize=(15, 15))
+	for correct in correct[:9]:
+		ax = plt.subplot(3, 3, i)
+		plt.imshow(x_test[correct].reshape(28, 28), cmap='gray', interpolation='none')
+		ax.set_title("Predicted {}, Class {}".format(predicted_classes[correct], y_test[correct]))
+		ax.get_xaxis().set_visible(False)
+		ax.get_yaxis().set_visible(False)
+		i = i+1
+	plt.show()
+
+	incorrect = np.where(predicted_classes != y_test)[0]
+
+	plt.figure(figsize=(15, 15))
+	for i, incorrect in enumerate(incorrect[:9]):
+		ax = plt.subplot(3, 3, i + 1)
+		plt.imshow(x_test[incorrect].reshape(28, 28), cmap='gray', interpolation='none')
+		plt.gray()
+		ax.set_title("Predicted {}, Class {}".format(predicted_classes[correct], y_test[incorrect]))
+		ax.get_xaxis().set_visible(False)
+		ax.get_yaxis().set_visible(False)
 	plt.show()
 
 
@@ -181,7 +190,7 @@ if __name__ == "__main__":
 		autoencoder_model = load_model(model)
 		l = (len(autoencoder_model.layers)/2) -1
 
-		flat = keras.layers.Flatten()(autoencoder_model.layers[int(l)].output)   	# get autoencoder's output and do flatten
+		flat = keras.layers.Flatten()(autoencoder_model.layers[int(l)].output)      # get autoencoder's output and do flatten
 		den = keras.layers.Dense(neurons_fc, activation='relu')(flat)
 		output = keras.layers.Dense(num_classes, activation='softmax')(den)
 
@@ -233,11 +242,17 @@ if __name__ == "__main__":
 			if (val == 1):
 				continue
 			elif (val == 3):
-				# print_correct_incorrect(predicted_classes, x_train, y_test)
+				predicted_classes = encoder_model.predict(x_test)
+				predicted_classes = np.argmax(np.round(predicted_classes), axis=1)
+
+				print_correct_incorrect(predicted_classes, x_test, y_test)
 				break
 
 		elif (val == 3):
-			# print_correct_incorrect(predicted_classes, x_train, y_test)
+			predicted_classes = encoder_model.predict(x_test)
+			predicted_classes = np.argmax(np.round(predicted_classes), axis=1)	
+
+			print_correct_incorrect(predicted_classes, x_test, y_test)
 			break
 
 
