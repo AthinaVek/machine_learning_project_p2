@@ -103,7 +103,7 @@ if __name__ == "__main__":
 		for layer in encoder_model.layers[0:int(l)+1]:
 			layer.trainable = False
 
-		encoder_model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(), metrics=[metrics.CategoricalAccuracy()])
+		encoder_model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(), metrics=['accuracy'])
 		encoder_model.summary()
 
 		classify_train = encoder_model.fit(x_train, y_train_array, batch_size=batch_sz, epochs=epochs_num, verbose=1, validation_data=(xx_test, xy_test_array))
